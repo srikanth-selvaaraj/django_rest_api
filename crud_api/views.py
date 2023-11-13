@@ -11,8 +11,8 @@ def list_blogs(request):
     try:
         blogs = Blog.objects.all()
         if blogs:
-            serialized_data = BlogSerializer(blogs, many=True)
-            return Response({'response': serialized_data.data}, status=status.HTTP_200_OK)
+            serialized_blogs = BlogSerializer(blogs, many=True)
+            return Response({'response': serialized_blogs.data}, status=status.HTTP_200_OK)
         else:
             return Response({'response': 'No blogs Found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -34,11 +34,26 @@ def create_blog(request):
         return Response({'response': 'Something Went Wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['PUT'])
+@api_view(['GET'])
+def get_blog(reqeust, pk):
+    try:
+        blog = Blog.objects.get(pk=pk)
+        serialized_blog = BlogSerializer(blog, many=False)
+        return Response({'response': serialized_blog.data}, status=status.HTTP_200_OK)
+    except Blog.DoesNotExist:
+        return Response({'response': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return (Response({'response': 'Something Went Wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+
+@api_view(['PUT', 'PATCH'])
 def update_blog(request, pk):
     try:
         blog = Blog.objects.get(pk=pk)
-        updated_blog = BlogSerializer(instance=blog, data=request.data)
+        if request.method == 'PUT':
+            updated_blog = BlogSerializer(instance=blog, data=request.data)
+        else:
+            updated_blog = BlogSerializer(instance=blog, data=request.data, partial=True)
 
         if updated_blog.is_valid():
             updated_blog.save()
@@ -48,7 +63,7 @@ def update_blog(request, pk):
     except Blog.DoesNotExist:
         return Response({'response': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'response': f'Something Went Wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return (Response({'response': f'Something Went Wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR))
 
 
 @api_view(['DELETE'])
