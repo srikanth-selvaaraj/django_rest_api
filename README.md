@@ -8,7 +8,7 @@ For function based views we use,
 
     from rest_framework.decorators import api_view
 
-For function based views we use,
+For class based views we use,
 
     from rest_framework.views import APIView
 
