@@ -4,9 +4,27 @@ from .models import User
 
 
 class BlogSerializer(serializers.ModelSerializer):
+    blog_title = serializers.CharField(source='title') # rename the api key
     class Meta:
         model = Blog
-        fields = ['id', 'title', 'description']
+        fields = ['id', 'blog_title', 'description']
+
+    def validate_title(self, value):
+        """
+        Validations single field
+        """
+        if len(value) < 10:
+            raise serializers.ValidationError("Title must have at least 10 charectors")
+        
+        return value
+    
+    def to_representation(self, instance):
+        """
+        Adding extra fields that not in model
+        """
+        representation = super().to_representation(instance)
+        representation['description_length'] = len(instance.description)
+        return representation
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -21,12 +39,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             }
         }
 
-    def save(self):
-        user = User(email=self.validated_data['email'], username=self.validated_data['username'])
-        password = self.validated_data['password']
-        password2 = self.validated_data['password2']
-        if password != password2:
-            raise serializers.ValidationError({'response': {'password': 'password must match'}})
-        user.set_password(password)
-        user.save()
-        return user
+    def validate(self, data):
+        """
+        Validate all the fields
+        """
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("password and confirm password dosen't matched")
+        
+        return data
